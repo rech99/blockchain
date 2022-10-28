@@ -1,23 +1,26 @@
-import express from "express";
+import express  from "express";
 import bodyParser from "body-parser";
-import Blockchain from "../blockchain/blockchain";
-import { restart } from "nodemon";
 
-const {HTTP_PORT = 3000} = process.env;
+import Blockchain from "../blockchain/blockchain";
+import P2PService from "./p2p";
+
+const { HTTP_PORT = 3000 } = process.env;
 
 const app = express();
-
 const blockchain = new Blockchain();
+const p2pservice = new P2PService(); 
 
 app.use(bodyParser.json());
 
-app.get('/blocks', (req, res) =>{
+app.get('/blocks', (req, res) => {
     res.json(blockchain.blocks);
 });
 
-app.post('/mine', (req, res) =>{
-    const {body: { data } } = req;
+app.post('/mine', (req, res) => {
+    const { body: { data } } = req;
     const block = blockchain.addBlock(data);
+
+    p2pservice.sync();
 
     res.json({
         blocks: blockchain.blocks.length,
@@ -26,6 +29,6 @@ app.post('/mine', (req, res) =>{
 });
 
 app.listen(HTTP_PORT, () => {
-    console.log(`service HTTP: ${HTTP_PORT} listening...`);
+    console.log(`Service HTTP: ${HTTP_PORT} listening...`);
+    p2pservice.listen();
 });
-
